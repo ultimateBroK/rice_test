@@ -233,10 +233,24 @@ EOL
 fi
 
 # Set up pywal templates and links
+echo -e "${BLUE}Setting up color templates...${NC}"
 mkdir -p "${HOME}/.config/wal/templates"
+
+# Copy templates first
 cp -r "$SCRIPT_DIR/config/wal/templates/"* "$HOME/.config/wal/templates/"
-ln -sf "$HOME/.config/wal/templates/colors-hyprland.conf" "$HOME/.cache/wal/colors-hyprland.conf"
-ln -sf "$HOME/.config/wal/templates/colors-waybar.css" "$HOME/.cache/wal/colors-waybar.css"
+
+# Create cache directory
+mkdir -p "$HOME/.cache/wal"
+
+# Create absolute symlinks
+ln -sf "${HOME}/.config/wal/templates/colors-hyprland.conf" "${HOME}/.cache/wal/colors-hyprland.conf"
+ln -sf "${HOME}/.config/wal/templates/colors-waybar.css" "${HOME}/.cache/wal/colors-waybar.css"
+
+# Generate initial theme with the new templates
+echo -e "${BLUE}Generating initial color scheme...${NC}"
+wal --backend haishoku -n -i "$HOME/.config/hypr/wallpapers/default.jpg" || \
+wal --backend colorthief -n -i "$HOME/.config/hypr/wallpapers/default.jpg" || \
+wal -n -i "$HOME/.config/hypr/wallpapers/default.jpg"
 
 # Create pywal post-change script
 cat > "${HOME}/.config/wal/postrun" << 'EOL'

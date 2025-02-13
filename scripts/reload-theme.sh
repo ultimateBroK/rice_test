@@ -1,11 +1,22 @@
 #!/bin/bash
 
-# Reload Hyprland colors
-hyprctl reload
+# Regenerate colors
+wal -i ~/.config/hypr/wallpapers/default.jpg -n --backend haishoku || \
+wal -i ~/.config/hypr/wallpapers/default.jpg -n --backend colorthief || \
+wal -i ~/.config/hypr/wallpapers/default.jpg -n
 
-# Restart Waybar to apply new colors
+# Ensure template links are correct
+ln -sf ~/.config/wal/templates/colors-hyprland.conf ~/.cache/wal/colors-hyprland.conf
+ln -sf ~/.config/wal/templates/colors-waybar.css ~/.cache/wal/colors-waybar.css
+
+# Kill and restart waybar
 killall waybar
 waybar &
 
-# Notify user
-notify-send "Theme Updated" "Material You colors have been reloaded"
+# Reload Hyprland config
+hyprctl reload
+
+# Restart the wallpaper daemon
+killall hyprpaper
+sleep 1
+hyprpaper &
