@@ -124,18 +124,51 @@ for dir in "${RICE_CONFIG[@]}"; do
     fi
 done
 
-# Set up pywal and Material You theming
-echo -e "${BLUE}Setting up pywal for Material You theming...${NC}"
-mkdir -p "$HOME/.cache/wal"
-touch "$HOME/.cache/wal/colors"
+# Create necessary directories for wallpapers
+echo -e "${BLUE}Setting up wallpaper directory...${NC}"
+mkdir -p "$HOME/.config/hypr/wallpapers"
+chmod 755 "$HOME/.config/hypr/wallpapers"
+
+# Verify ImageMagick installation and permissions
+echo -e "${BLUE}Checking ImageMagick installation...${NC}"
+if ! command -v magick &> /dev/null; then
+    echo -e "${RED}Error: ImageMagick is not installed. Installing...${NC}"
+    sudo pacman -S --noconfirm imagemagick
+fi
+
+# Create a simple initial wallpaper
+echo -e "${BLUE}Creating initial wallpaper...${NC}"
+mkdir -p "$HOME/.config/hypr/wallpapers"
+if ! magick convert -size 1920x1080 xc:"#1a1b26" "$HOME/.config/hypr/wallpapers/default.jpg"; then
+    echo -e "${RED}Failed to create wallpaper. Checking ImageMagick policy...${NC}"
+    if [ -f "/etc/ImageMagick-7/policy.xml" ]; then
+        sudo sed -i 's/<policy domain="path" rights="none" pattern="@\*"/<policy domain="path" rights="read|write" pattern="@*"/g' "/etc/ImageMagick-7/policy.xml"
+    elif [ -f "/etc/ImageMagick-6/policy.xml" ]; then
+        sudo sed -i 's/<policy domain="path" rights="none" pattern="@\*"/<policy domain="path" rights="read|write" pattern="@*"/g' "/etc/ImageMagick-6/policy.xml"
+    fi
+    # Try again after policy update
+    magick convert -size 1920x1080 xc:"#1a1b26" "$HOME/.config/hypr/wallpapers/default.jpg"
+fi
+
+# Verify wallpaper was created
+if [ ! -f "$HOME/.config/hypr/wallpapers/default.jpg" ]; then
+    echo -e "${RED}Failed to create wallpaper. Installation cannot continue.${NC}"
+    exit 1
+fi
+
+# Initialize pywal with the wallpaper
+echo -e "${BLUE}Initializing color scheme...${NC}"
+if ! wal -i "$HOME/.config/hypr/wallpapers/default.jpg" -n; then
+    echo -e "${YELLOW}Warning: Failed to initialize pywal color scheme${NC}"
+fi
 
 # Set up pywal templates and links
 mkdir -p "${HOME}/.config/wal/templates"
-ln -sf "$CONFIG_DIR/wal/templates/colors-hyprland.conf" "$HOME/.cache/wal/colors-hyprland.conf"
-ln -sf "$CONFIG_DIR/wal/templates/colors-waybar.css" "$HOME/.cache/wal/colors-waybar.css"
+cp -r "$SCRIPT_DIR/config/wal/templates/"* "$HOME/.config/wal/templates/"
+ln -sf "$HOME/.config/wal/templates/colors-hyprland.conf" "$HOME/.cache/wal/colors-hyprland.conf"
+ln -sf "$HOME/.config/wal/templates/colors-waybar.css" "$HOME/.cache/wal/colors-waybar.css"
 
 # Create pywal post-change script
-mkdir -p "${HOME}/.config/wal"
 cat > "${HOME}/.config/wal/postrun" << 'EOL'
 #!/bin/bash
 ~/.config/rice_test/scripts/reload-theme.sh
@@ -150,8 +183,23 @@ sudo systemctl enable --now NetworkManager bluetooth
 # Set permissions
 sudo usermod -aG video,input "$USER"
 
+# Make scripts executable
+echo -e "${BLUE}Setting up script permissions...${NC}"
+chmod +x "$SCRIPT_DIR/scripts/"*.sh
+
+# Ensure ImageMagick policy allows reading/writing the required files
+echo -e "${BLUE}Configuring ImageMagick policy...${NC}"
+if [ -f "/etc/ImageMagick-7/policy.xml" ]; then
+    sudo cp "/etc/ImageMagick-7/policy.xml" "/etc/ImageMagick-7/policy.xml.backup"
+    sudo sed -i 's/<policy domain="path" rights="none" pattern="@\*"/<policy domain="path" rights="read|write" pattern="@*"/g' "/etc/ImageMagick-7/policy.xml"
+elif [ -f "/etc/ImageMagick-6/policy.xml" ]; then
+    sudo cp "/etc/ImageMagick-6/policy.xml" "/etc/ImageMagick-6/policy.xml.backup"
+    sudo sed -i 's/<policy domain="path" rights="none" pattern="@\*"/<policy domain="path" rights="read|write" pattern="@*"/g' "/etc/ImageMagick-6/policy.xml"
+fi
+
 # Generate initial wallpaper and theme
-bash "$SCRIPT_DIR/scripts/generate-wallpaper.sh"
+echo -e "${BLUE}Generating initial wallpaper...${NC}"
+bash "$SCRIPT_DIR/scripts/generate-wallpaper.sh" --width 1920 --height 1080
 
 echo -e "${GREEN}Installation complete! Please log out and select Hyprland from your display manager.${NC}"
 echo -e "${YELLOW}Note: You may need to restart your system for all changes to take effect.${NC}"

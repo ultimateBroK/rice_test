@@ -1,13 +1,22 @@
 #!/bin/bash
 
+# Exit on error
+set -e
+
 # Default values
 WIDTH=1920
-HEIGHT=1200
+HEIGHT=1080
 STYLE="geometric"
 COLOR1="#1a1b26"
 COLOR2="#24283b"
 ACCENT="#7aa2f7"
 OUTPUT="$HOME/.config/hypr/wallpapers/default.jpg"
+
+# Make sure imagemagick is installed
+if ! command -v magick &> /dev/null; then
+    echo "Error: ImageMagick is not installed. Please install it first."
+    exit 1
+fi
 
 show_help() {
     echo "Usage: $0 [options]"
@@ -23,48 +32,13 @@ show_help() {
 }
 
 generate_geometric() {
-    magick -size "${WIDTH}x${HEIGHT}" \
-        -define gradient:vector="0,0 ${WIDTH},${HEIGHT}" \
+    echo "Generating geometric wallpaper..."
+    # Create a simple gradient wallpaper
+    magick convert -size "${WIDTH}x${HEIGHT}" \
         -define gradient:angle=45 \
         gradient:"${COLOR1}-${COLOR2}" \
         -fill "${ACCENT}" \
-        -stroke "${ACCENT}" \
-        -strokewidth 2 \
-        -draw "path 'M 0,0 L ${WIDTH},0 L ${WIDTH},${HEIGHT} L 0,${HEIGHT} Z M ${WIDTH}*0.1,${HEIGHT}*0.15 L ${WIDTH}*0.9,${HEIGHT}*0.15 L ${WIDTH}*0.9,${HEIGHT}*0.85 L ${WIDTH}*0.1,${HEIGHT}*0.85 Z'" \
-        -draw "path 'M ${WIDTH}*0.15,${HEIGHT}*0.25 L ${WIDTH}*0.85,${HEIGHT}*0.25 L ${WIDTH}*0.85,${HEIGHT}*0.75 L ${WIDTH}*0.15,${HEIGHT}*0.75 Z'" \
-        -blur 0x2 \
-        "${OUTPUT}"
-}
-
-generate_waves() {
-    magick -size "${WIDTH}x${HEIGHT}" \
-        -define gradient:vector="0,0 ${WIDTH},${HEIGHT}" \
-        gradient:"${COLOR1}-${COLOR2}" \
-        \( -size "${WIDTH}x${HEIGHT}" \
-            -seed 1337 \
-            plasma:fractal \
-            -blur 0x2 \
-            -level 0,50% \
-            -fill "${ACCENT}" \
-            -colorize 50% \
-        \) \
-        -compose screen \
-        -composite \
-        "${OUTPUT}"
-}
-
-generate_dots() {
-    magick -size "${WIDTH}x${HEIGHT}" \
-        -define gradient:vector="0,0 ${WIDTH},${HEIGHT}" \
-        gradient:"${COLOR1}-${COLOR2}" \
-        \( -size "${WIDTH}x${HEIGHT}" \
-            xc: -seed 1337 \
-            -sparse-color voronoi "0,0 ${ACCENT} ${WIDTH},${HEIGHT} ${ACCENT}" \
-            -blur 0x3 \
-            -level 0,50% \
-        \) \
-        -compose screen \
-        -composite \
+        -draw "rectangle 0,0 ${WIDTH},${HEIGHT}" \
         "${OUTPUT}"
 }
 
@@ -85,17 +59,24 @@ done
 
 # Create output directory if it doesn't exist
 mkdir -p "$(dirname "${OUTPUT}")"
+chmod 755 "$(dirname "${OUTPUT}")"
 
 # Generate wallpaper based on style
 case "${STYLE}" in
     geometric) generate_geometric ;;
-    waves) generate_waves ;;
-    dots) generate_dots ;;
     *) echo "Unknown style: ${STYLE}"; show_help; exit 1 ;;
 esac
 
-# Update pywal colors
-wal -i "${OUTPUT}"
+# Verify the wallpaper was created
+if [ ! -f "${OUTPUT}" ]; then
+    echo "Error: Failed to generate wallpaper at ${OUTPUT}"
+    exit 1
+fi
 
-echo "Wallpaper generated at: ${OUTPUT}"
-echo "Color scheme updated with pywal"
+# Initialize pywal with the generated wallpaper
+if command -v wal &> /dev/null; then
+    echo "Initializing pywal with generated wallpaper..."
+    wal --saturate 0.7 -i "${OUTPUT}" -n || echo "Warning: Failed to initialize pywal"
+fi
+
+echo "Wallpaper generated successfully at: ${OUTPUT}"
