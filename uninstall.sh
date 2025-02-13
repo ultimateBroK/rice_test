@@ -1,38 +1,86 @@
 #!/bin/bash
 
+# Exit on error and undefined variables
+set -euo pipefail
+
 # Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
+YELLOW='\033[1;33m'
 NC='\033[0m'
 
-echo -e "${BLUE}Restoring Hyprland to default state...${NC}"
-
-# Kiểm tra xem đã chạy với quyền root chưa
-if [[ $EUID -ne 0 ]]; then
-   echo "Script này cần chạy với quyền root (sudo)."
+# Check if running as root
+if [[ $EUID -eq 0 ]]; then
+   echo -e "${RED}This script should not be run as root${NC}"
    exit 1
 fi
 
-# Make script exit on error
-set -e
+echo -e "${BLUE}Restoring Hyprland to default state...${NC}"
 
-# Gỡ cài đặt các gói
-echo "Gỡ cài đặt Hyprland và các gói liên quan..."
-pacman -Rns --noconfirm hyprland waybar xdg-desktop-portal-hyprland \
-  swaybg wlr-randr brightnessctl dunst polkit-kde-agent \
-  grim slurp wl-clipboard kitty alacritty thunar nwg-look \
-  swww network-manager-applet pavucontrol
+# Function to safely remove directories
+safe_remove() {
+    local dir="$1"
+    if [ -d "$dir" ]; then
+        echo -e "${YELLOW}Backing up $dir to ${dir}.bak.$(date +%Y%m%d_%H%M%S)${NC}"
+        mv "$dir" "${dir}.bak.$(date +%Y%m%d_%H%M%S)"
+    fi
+}
 
-echo "Removing custom configurations..."
+# Packages to remove
+PACKAGES=(
+    hyprland
+    waybar
+    xdg-desktop-portal-hyprland
+    swaybg
+    wlr-randr
+    brightnessctl
+    dunst
+    polkit-kde-agent
+    grim
+    slurp
+    wl-clipboard
+    kitty
+    alacritty
+    thunar
+    nwg-look
+    swww
+    network-manager-applet
+    pavucontrol
+)
 
-# Remove config files
-rm -rf ~/.config/hypr
-rm -rf ~/.config/waybar
-rm -rf ~/.config/mako
+# Ask for confirmation
+echo -e "${YELLOW}The following packages will be removed:${NC}"
+printf '%s\n' "${PACKAGES[@]}"
+read -p "Do you want to continue? [y/N] " -n 1 -r
+echo
+if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+    echo -e "${RED}Operation cancelled.${NC}"
+    exit 1
+fi
 
-# Reset to default Hyprland config
-cat > ~/.config/hypr/hyprland.conf << EOL
+# Remove packages
+echo -e "${BLUE}Removing Hyprland and related packages...${NC}"
+sudo pacman -Rns --noconfirm "${PACKAGES[@]}" || true
+
+echo -e "${BLUE}Removing custom configurations...${NC}"
+
+# Backup and remove config directories
+CONFIG_DIRS=(
+    "$HOME/.config/hypr"
+    "$HOME/.config/waybar"
+    "$HOME/.config/mako"
+    "$HOME/.cache/wal"
+)
+
+for dir in "${CONFIG_DIRS[@]}"; do
+    safe_remove "$dir"
+done
+
+# Create minimal default Hyprland config
+mkdir -p ~/.config/hypr
+cat > ~/.config/hypr/hyprland.conf << 'EOL'
+# Default minimal Hyprland config
 monitor=,preferred,auto,1
 
 input {
@@ -69,6 +117,7 @@ dwindle {
     preserve_split = true
 }
 
+# Basic keybindings
 $mainMod = SUPER
 
 bind = $mainMod, Return, exec, kitty
@@ -78,11 +127,13 @@ bind = $mainMod, E, exec, dolphin
 bind = $mainMod, V, togglefloating,
 bind = $mainMod, D, exec, wofi --show drun
 
+# Focus with mainMod + arrow keys
 bind = $mainMod, left, movefocus, l
 bind = $mainMod, right, movefocus, r
 bind = $mainMod, up, movefocus, u
 bind = $mainMod, down, movefocus, d
 
+# Switch workspaces with mainMod + [0-9]
 bind = $mainMod, 1, workspace, 1
 bind = $mainMod, 2, workspace, 2
 bind = $mainMod, 3, workspace, 3
@@ -90,11 +141,9 @@ bind = $mainMod, 4, workspace, 4
 bind = $mainMod, 5, workspace, 5
 EOL
 
-echo "Restoration to default Hyprland configuration complete!"
+# Clean up Material You related items
+pip uninstall -y materialyou || true
 
-# Remove pywal cache
-rm -rf "$HOME/.cache/wal"
-
-echo -e "${GREEN}Uninstallation complete! Your configurations have been restored to default.${NC}"
-echo -e "${BLUE}Note: Packages installed by the install script have not been removed.${NC}"
-echo -e "${BLUE}If you want to remove them, please use your package manager manually.${NC}"
+echo -e "${GREEN}Uninstallation complete! Your configurations have been backed up and restored to default.${NC}"
+echo -e "${YELLOW}Note: Configuration backups can be found with .bak extension in their original locations.${NC}"
+echo -e "${BLUE}You may need to restart your system for all changes to take effect.${NC}"
