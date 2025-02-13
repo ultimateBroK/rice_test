@@ -73,7 +73,7 @@ PACKAGES=(
     swayidle
     swaylock
     pamixer
-    light
+    acpilight
     brightnessctl
     bluez
     bluez-utils
