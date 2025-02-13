@@ -1,141 +1,112 @@
 # Material You Hyprland Configuration
-
 A modern, Material You-inspired Hyprland configuration with dynamic theming, smooth animations, and an elegant user interface.
 
-![Preview Coming Soon]()
-
 ## Features
-
-- 🎨 **Material You Dynamic Theming**
-  - Automatically generates color schemes from your wallpaper
-  - Consistent color palette across all UI elements
-  - Smooth color transitions when theme changes
-
-- 🖼️ **Dynamic Wallpaper Generation**
-  - Three distinct styles: geometric, waves, and dots
+- 🎨 **Dynamic Color Schemes**
+  - Automatically generates color schemes from your wallpaper using pywal
+  - Multiple color extraction backends (haishoku, colorthief)
+  - Seamless integration with Waybar and Hyprland
+- 🖼️ **Auto Wallpaper Generation**
   - Material Design inspired patterns
-  - Auto-generated color harmonies
+  - Dynamic geometric patterns with accent colors
   - Custom resolution support
-
-- 🎯 **Optimized Multi-Monitor Setup**
-  - Pre-configured for dual monitor setup
-  - Primary: 1920x1200 @ 60Hz (bottom)
-  - Secondary: 1920x1080 @ 75Hz (top)
-  - Smart workspace distribution
-
-- ⚡ **Modern Animations**
-  - Smooth window transitions
-  - Material Design-inspired bezier curves
+- ⚡ **Modern Desktop Experience**
+  - Smooth window animations
+  - Material Design-inspired transitions
+  - Integrated SDDM display manager
   - Workspace sliding animations
-  - Fade effects for popups
-
-- 🛠️ **Enhanced Input Configuration**
-  - Optimized touchpad gestures
-  - Natural scrolling
-  - Multi-touch support
-  - US keyboard layout
-
-- 📊 **Modern Waybar Configuration**
-  - Material You styling
-  - Dynamic module backgrounds
-  - Smooth transitions
-  - Useful system information
+- 🛠️ **Pre-configured Components**
+  - Waybar with system information
+  - Automatic XDG portal setup
+  - Polkit authentication agent
+  - Network and Bluetooth management
 
 ## Requirements
-
 - Arch Linux or compatible distribution
-- Basic system development tools
-- ImageMagick for wallpaper generation
-- Python 3.6+ for color processing
+- `git` and `base-devel` for AUR packages
+- No root privileges needed (sudo access required)
 
 ## Installation
 
 1. Clone this repository:
-   ```bash
-   git clone https://github.com/yourusername/rice_test.git
-   cd rice_test
-   ```
-
-2. Run the installation script:
-   ```bash
-   ./install.sh
-   ```
-
-3. Log out and select Hyprland from your display manager
-
-## Configuration
-
-### Generating New Wallpapers
-
 ```bash
-./scripts/generate-wallpaper.sh [options]
-
-Options:
-  -w, --width WIDTH      Wallpaper width (default: 1920)
-  -h, --height HEIGHT    Wallpaper height (default: 1200)
-  -s, --style STYLE      Pattern style: geometric, waves, dots
-  -c1, --color1 COLOR    First gradient color
-  -c2, --color2 COLOR    Second gradient color
-  -a, --accent COLOR     Accent color
-  -o, --output PATH      Output path
+git clone https://github.com/yourusername/rice_test.git
+cd rice_test
 ```
 
-### Random Theme Generation
-
-Generate a random Material You theme:
+2. Make the installation script executable:
 ```bash
-./scripts/random-theme.sh
+chmod +x install.sh
 ```
 
-### Material You Color Palette
-
-Generate a Material You color palette from any image:
+3. Run the installation script:
 ```bash
-./scripts/generate-material-palette.sh [image_path]
+./install.sh
 ```
 
-## Directory Structure
+4. Restart your system to ensure all changes take effect:
+```bash
+reboot
+```
 
-```
-.
-├── config/
-│   ├── hypr/           # Hyprland configuration
-│   ├── waybar/         # Waybar configuration
-│   └── wal/            # Pywal templates
-├── scripts/            # Utility scripts
-└── install.sh          # Installation script
-```
+5. At the login screen, select "Hyprland" from your session options
+
+## Default Keybindings
+
+Essential shortcuts to get started:
+- `SUPER + Return`: Open terminal (kitty)
+- `SUPER + Q`: Close active window
+- `SUPER + M`: Exit Hyprland
+- `SUPER + D`: App launcher (wofi)
+- `SUPER + Arrow keys`: Navigate between windows
+- `SUPER + 1-9`: Switch workspaces
+- `SUPER + SHIFT + 1-9`: Move window to workspace
+
+## Configuration Files
+
+Key configuration files and their purposes:
+- `config/hypr/hyprland.conf`: Main Hyprland configuration
+- `config/waybar/config`: Waybar layout and modules
+- `config/waybar/style.css`: Waybar appearance
+- `config/hypr/hyprpaper.conf`: Wallpaper settings
 
 ## Customization
 
-### Hyprland Configuration
-Edit `config/hypr/hyprland.conf` to customize:
-- Window behaviors
-- Keybindings
-- Animations
-- Monitor layout
+### Changing the Wallpaper
+Generate a new wallpaper:
+```bash
+./scripts/generate-wallpaper.sh --width 1920 --height 1080
+```
 
-### Waybar Customization
-Edit `config/waybar/config` to:
-- Add/remove modules
-- Change module positions
-- Modify click actions
+### Reloading the Theme
+If you change the wallpaper or want to regenerate colors:
+```bash
+./scripts/reload-theme.sh
+```
 
-Edit `config/waybar/style.css` to:
-- Change colors
-- Modify spacing
-- Adjust borders
-- Update transitions
+### Restarting Waybar
+If the bar disappears or needs refresh:
+```bash
+./scripts/restart-waybar.sh
+```
 
-## Keybindings
+## Troubleshooting
 
-Default keybindings follow standard Hyprland configuration:
-- `SUPER + Return`: Open terminal
-- `SUPER + Q`: Close window
-- `SUPER + 1-9`: Switch workspaces
-- `SUPER + SHIFT + 1-9`: Move window to workspace
-- `SUPER + Arrow keys`: Navigate windows
-- `SUPER + D`: App launcher (wofi)
+### No Waybar
+If Waybar doesn't appear:
+1. Open a terminal (`SUPER + Return`)
+2. Run: `./scripts/restart-waybar.sh`
+
+### Color Scheme Issues
+If colors aren't updating:
+1. Check if pywal is installed: `pacman -Qs python-pywal`
+2. Run: `./scripts/reload-theme.sh`
+3. Verify color files exist: `ls ~/.cache/wal/`
+
+### Display Manager
+If SDDM doesn't start:
+1. Check if it's enabled: `systemctl status sddm`
+2. Enable it manually: `sudo systemctl enable --now sddm`
 
 ## Uninstallation
 
@@ -144,28 +115,20 @@ To remove the configuration and restore defaults:
 ./uninstall.sh
 ```
 
-## Troubleshooting
-
-If colors aren't updating:
-1. Ensure pywal is installed
-2. Run `./scripts/reload-theme.sh`
-3. Check `~/.cache/wal` for generated color files
-
-If wallpaper generation fails:
-1. Verify ImageMagick is installed
-2. Check write permissions in output directory
-3. Ensure all dependencies are installed
+This will:
+- Remove installed packages
+- Backup existing configurations
+- Restore minimal defaults
+- Disable the display manager
 
 ## Contributing
-
 Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
-
 This project is open source and available under the [MIT License](LICENSE).
 
-## Acknowledgments
-
-- [Hyprland](https://hyprland.org/) for the amazing Wayland compositor
-- [pywal](https://github.com/dylanaraps/pywal) for color scheme generation
-- Material Design team for design inspiration
+## Credits
+- [Hyprland](https://hyprland.org/) - Wayland compositor
+- [pywal](https://github.com/dylanaraps/pywal) - Color scheme generation
+- [waybar](https://github.com/Alexays/Waybar) - Status bar
+- [ImageMagick](https://imagemagick.org/) - Wallpaper generation
