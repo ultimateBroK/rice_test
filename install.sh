@@ -27,9 +27,9 @@ mkdir -p ~/.config/waybar
 
 # (Tùy chọn) Sao chép file cấu hình mẫu
 # Lưu ý: Bạn nên tự tạo file cấu hình của riêng mình
-# cp /usr/share/doc/hyprland/example/hyprland.conf ~/.config/hypr/hyprland.conf
-# cp /usr/share/doc/waybar/config ~/.config/waybar/config
-# cp /usr/share/doc/waybar/style.css ~/.config/waybar/style.css
+cp /usr/share/doc/hyprland/example/hyprland.conf ~/.config/hypr/hyprland.conf
+cp /usr/share/doc/waybar/config ~/.config/waybar/config
+cp /usr/share/doc/waybar/style.css ~/.config/waybar/style.css
 
 echo "Cài đặt hoàn tất! Vui lòng khởi động lại để áp dụng thay đổi."
 echo "Bạn có thể cần cấu hình Hyprland và Waybar trong ~/.config/hypr/ và ~/.config/waybar/"
