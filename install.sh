@@ -43,6 +43,15 @@ if ! command_exists pip; then
     sudo pacman -S --needed python-pip
 fi
 
+# Check for yay (AUR helper)
+if ! command_exists yay; then
+    echo -e "${YELLOW}Installing yay AUR helper...${NC}"
+    sudo pacman -S --needed git base-devel
+    git clone https://aur.archlinux.org/yay.git /tmp/yay
+    (cd /tmp/yay && makepkg -si --noconfirm)
+    rm -rf /tmp/yay
+fi
+
 # Create configuration directories
 CONFIG_DIR="$HOME/.config"
 RICE_CONFIG=(
@@ -89,8 +98,17 @@ PACKAGES=(
     imagemagick
 )
 
-# Install packages in parallel using parallel downloads
+AUR_PACKAGES=(
+    python-material-you
+)
+
+# Install main repo packages
+echo -e "${BLUE}Installing main repository packages...${NC}"
 sudo pacman -Sy --needed --noconfirm "${PACKAGES[@]}"
+
+# Install AUR packages
+echo -e "${BLUE}Installing AUR packages...${NC}"
+yay -S --needed --noconfirm "${AUR_PACKAGES[@]}"
 
 # Backup existing configs
 for dir in "${RICE_CONFIG[@]}"; do
@@ -110,11 +128,6 @@ done
 echo -e "${BLUE}Setting up pywal for Material You theming...${NC}"
 mkdir -p "$HOME/.cache/wal"
 touch "$HOME/.cache/wal/colors"
-
-# Install Material You color extraction tool if not exists
-if ! pip show materialyou >/dev/null 2>&1; then
-    pip install --user materialyou
-fi
 
 # Set up pywal templates and links
 mkdir -p "${HOME}/.config/wal/templates"
