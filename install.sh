@@ -88,6 +88,7 @@ PACKAGES=(
     bluez-utils
     networkmanager
     python-pywal
+    python-pillow
     qt5-wayland
     qt6-wayland
     xdg-desktop-portal-hyprland
@@ -105,6 +106,10 @@ AUR_PACKAGES=(
 # Install main repo packages
 echo -e "${BLUE}Installing main repository packages...${NC}"
 sudo pacman -Sy --needed --noconfirm "${PACKAGES[@]}"
+
+# Install color extraction backends using pip
+echo -e "${BLUE}Installing color extraction backends...${NC}"
+pip install --user colorz haishoku colorthief
 
 # Install AUR packages
 echo -e "${BLUE}Installing AUR packages...${NC}"
@@ -158,8 +163,36 @@ fi
 
 # Initialize pywal with the wallpaper
 echo -e "${BLUE}Initializing color scheme...${NC}"
-if ! wal -i "$HOME/.config/hypr/wallpapers/default.jpg" -n; then
-    echo -e "${YELLOW}Warning: Failed to initialize pywal color scheme${NC}"
+
+# Try different backends in order of preference
+if ! wal --backend colorz --saturate 1.0 -i "$HOME/.config/hypr/wallpapers/default.jpg" -n; then
+    echo -e "${YELLOW}Colorz backend failed, trying haishoku...${NC}"
+    if ! wal --backend haishoku --saturate 1.0 -i "$HOME/.config/hypr/wallpapers/default.jpg" -n; then
+        echo -e "${YELLOW}Haishoku backend failed, trying colorthief...${NC}"
+        if ! wal --backend colorthief -i "$HOME/.config/hypr/wallpapers/default.jpg" -n; then
+            echo -e "${RED}All color extraction backends failed. Using default colors...${NC}"
+            # Create a fallback colors file
+            mkdir -p "$HOME/.cache/wal"
+            cat > "$HOME/.cache/wal/colors" << EOL
+#1a1b26
+#24283b
+#7aa2f7
+#bb9af7
+#7dcfff
+#e0af68
+#9ece6a
+#a9b1d6
+#565f89
+#f7768e
+#73daca
+#ff9e64
+#b4f9f8
+#c0caf5
+#2ac3de
+#c0caf5
+EOL
+        fi
+    fi
 fi
 
 # Set up pywal templates and links

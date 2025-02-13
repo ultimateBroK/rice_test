@@ -33,12 +33,25 @@ show_help() {
 
 generate_geometric() {
     echo "Generating geometric wallpaper..."
-    # Create a simple gradient wallpaper
-    magick convert -size "${WIDTH}x${HEIGHT}" \
+    # Create a more complex gradient wallpaper that pywal can extract colors from
+    magick convert \( -size "${WIDTH}x${HEIGHT}" \
         -define gradient:angle=45 \
-        gradient:"${COLOR1}-${COLOR2}" \
-        -fill "${ACCENT}" \
-        -draw "rectangle 0,0 ${WIDTH},${HEIGHT}" \
+        gradient:"${COLOR1}-${COLOR2}" \) \
+        \( -size "${WIDTH}x${HEIGHT}" \
+        -define gradient:angle=135 \
+        gradient:"${ACCENT}00-${ACCENT}44" \) \
+        -compose over -composite \
+        -blur 0x2 \
+        "${OUTPUT}"
+    
+    # Add some visual elements for better color extraction
+    magick convert "${OUTPUT}" \
+        \( -size "${WIDTH}x${HEIGHT}" xc:none \
+        -draw "fill ${ACCENT}22 roundrectangle $(($WIDTH/4)),$(($HEIGHT/4)) $(($WIDTH*3/4)),$(($HEIGHT*3/4)) 20,20" \
+        -draw "fill ${COLOR2}33 roundrectangle $(($WIDTH/3)),$(($HEIGHT/3)) $(($WIDTH*2/3)),$(($HEIGHT*2/3)) 40,40" \
+        -draw "fill ${COLOR1}44 circle $(($WIDTH/2)),$(($HEIGHT/2)) $(($WIDTH/2)),$(($HEIGHT/2-100))" \
+        \) \
+        -compose over -composite \
         "${OUTPUT}"
 }
 
@@ -76,7 +89,10 @@ fi
 # Initialize pywal with the generated wallpaper
 if command -v wal &> /dev/null; then
     echo "Initializing pywal with generated wallpaper..."
-    wal --saturate 0.7 -i "${OUTPUT}" -n || echo "Warning: Failed to initialize pywal"
+    # Use backend that works better with gradients
+    wal --backend colorz --saturate 1.0 -i "${OUTPUT}" -n || \
+    wal --backend haishoku --saturate 1.0 -i "${OUTPUT}" -n || \
+    echo "Warning: Failed to initialize pywal"
 fi
 
 echo "Wallpaper generated successfully at: ${OUTPUT}"
