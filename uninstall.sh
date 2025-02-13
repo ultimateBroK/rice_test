@@ -50,9 +50,9 @@ PACKAGES=(
     python-pywal
     python-pillow
     python-material-you
-    python-colorz
     python-haishoku
     python-colorthief
+    sddm
 )
 
 # Ask for confirmation
@@ -82,6 +82,15 @@ CONFIG_DIRS=(
 for dir in "${CONFIG_DIRS[@]}"; do
     safe_remove "$dir"
 done
+
+# Disable and stop SDDM
+echo -e "${BLUE}Disabling display manager...${NC}"
+sudo systemctl disable --now sddm || true
+
+# Clean up SDDM and Wayland configs
+sudo rm -f /etc/sddm.conf.d/10-wayland.conf
+sudo rm -f /usr/share/wayland-sessions/hyprland.desktop
+rm -rf "$HOME/.config/environment.d/wayland.conf"
 
 # Create minimal default Hyprland config
 mkdir -p ~/.config/hypr

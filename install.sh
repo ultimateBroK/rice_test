@@ -92,6 +92,9 @@ PACKAGES=(
     hyprpaper
     pavucontrol
     imagemagick
+    sddm
+    xorg-server
+    xorg-xwayland
 )
 
 # Try to install color backends from main repos first
@@ -267,6 +270,49 @@ fi
 # Generate initial wallpaper and theme
 echo -e "${BLUE}Generating initial wallpaper...${NC}"
 bash "$SCRIPT_DIR/scripts/generate-wallpaper.sh" --width 1920 --height 1080
+
+# Enable and configure SDDM
+echo -e "${BLUE}Setting up display manager...${NC}"
+sudo systemctl enable sddm
+# Create minimal SDDM config to ensure Wayland support
+sudo mkdir -p /etc/sddm.conf.d
+sudo tee /etc/sddm.conf.d/10-wayland.conf > /dev/null << 'EOL'
+[General]
+DisplayServer=wayland
+GreeterEnvironment=QT_WAYLAND_DISABLE_WINDOWDECORATION=1
+
+[Wayland]
+EnableHiDPI=true
+SessionDir=/usr/share/wayland-sessions
+EOL
+
+# Create Hyprland session file if it doesn't exist
+sudo mkdir -p /usr/share/wayland-sessions
+if [ ! -f "/usr/share/wayland-sessions/hyprland.desktop" ]; then
+    sudo tee /usr/share/wayland-sessions/hyprland.desktop > /dev/null << 'EOL'
+[Desktop Entry]
+Name=Hyprland
+Comment=An intelligent dynamic tiling Wayland compositor
+Exec=Hyprland
+Type=Application
+EOL
+fi
+
+# Add environment variables for Wayland
+mkdir -p "$HOME/.config/environment.d"
+cat > "$HOME/.config/environment.d/wayland.conf" << 'EOL'
+# Wayland environment variables
+QT_QPA_PLATFORM=wayland
+QT_QPA_PLATFORMTHEME=qt5ct
+QT_WAYLAND_DISABLE_WINDOWDECORATION=1
+GDK_BACKEND=wayland
+SDL_VIDEODRIVER=wayland
+CLUTTER_BACKEND=wayland
+XDG_SESSION_TYPE=wayland
+XDG_CURRENT_DESKTOP=Hyprland
+XDG_SESSION_DESKTOP=Hyprland
+MOZ_ENABLE_WAYLAND=1
+EOL
 
 echo -e "${GREEN}Installation complete! Please log out and select Hyprland from your display manager.${NC}"
 echo -e "${YELLOW}Note: You may need to restart your system for all changes to take effect.${NC}"
