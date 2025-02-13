@@ -47,6 +47,12 @@ PACKAGES=(
     swww
     network-manager-applet
     pavucontrol
+    python-pywal
+    python-pillow
+    python-material-you
+    python-colorz
+    python-haishoku
+    python-colorthief
 )
 
 # Ask for confirmation
@@ -59,9 +65,9 @@ if [[ ! $REPLY =~ ^[Yy]$ ]]; then
     exit 1
 fi
 
-# Remove packages
+# Remove packages using yay to handle both AUR and regular packages
 echo -e "${BLUE}Removing Hyprland and related packages...${NC}"
-sudo pacman -Rns --noconfirm "${PACKAGES[@]}" || true
+yay -Rns --noconfirm "${PACKAGES[@]}" || true
 
 echo -e "${BLUE}Removing custom configurations...${NC}"
 

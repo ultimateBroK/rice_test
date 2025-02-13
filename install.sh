@@ -38,11 +38,6 @@ if ! command_exists pacman; then
     exit 1
 fi
 
-if ! command_exists pip; then
-    echo -e "${YELLOW}Installing python-pip...${NC}"
-    sudo pacman -S --needed python-pip
-fi
-
 # Check for yay (AUR helper)
 if ! command_exists yay; then
     echo -e "${YELLOW}Installing yay AUR helper...${NC}"
@@ -99,6 +94,12 @@ PACKAGES=(
     imagemagick
 )
 
+# Try to install color backends from main repos first
+COLOR_PACKAGES=(
+    python-haishoku
+    python-colorthief
+)
+
 AUR_PACKAGES=(
     python-material-you
 )
@@ -107,13 +108,39 @@ AUR_PACKAGES=(
 echo -e "${BLUE}Installing main repository packages...${NC}"
 sudo pacman -Sy --needed --noconfirm "${PACKAGES[@]}"
 
-# Install color extraction backends using pip
-echo -e "${BLUE}Installing color extraction backends...${NC}"
-pip install --user colorz haishoku colorthief
+# Try to install color packages from main repos
+echo -e "${BLUE}Installing color extraction packages...${NC}"
+sudo pacman -S --needed --noconfirm "${COLOR_PACKAGES[@]}" || {
+    echo -e "${YELLOW}Some packages not found in main repos, trying AUR...${NC}"
+    for pkg in "${COLOR_PACKAGES[@]}"; do
+        yay -S --needed --noconfirm "$pkg" || echo -e "${YELLOW}Failed to install $pkg${NC}"
+    done
+}
 
 # Install AUR packages
 echo -e "${BLUE}Installing AUR packages...${NC}"
 yay -S --needed --noconfirm "${AUR_PACKAGES[@]}"
+
+# Create fallback colors file early in case package installation fails
+mkdir -p "$HOME/.cache/wal"
+cat > "$HOME/.cache/wal/colors" << EOL
+#1a1b26
+#24283b
+#7aa2f7
+#bb9af7
+#7dcfff
+#e0af68
+#9ece6a
+#a9b1d6
+#565f89
+#f7768e
+#73daca
+#ff9e64
+#b4f9f8
+#c0caf5
+#2ac3de
+#c0caf5
+EOL
 
 # Backup existing configs
 for dir in "${RICE_CONFIG[@]}"; do
@@ -165,15 +192,24 @@ fi
 echo -e "${BLUE}Initializing color scheme...${NC}"
 
 # Try different backends in order of preference
-if ! wal --backend colorz --saturate 1.0 -i "$HOME/.config/hypr/wallpapers/default.jpg" -n; then
-    echo -e "${YELLOW}Colorz backend failed, trying haishoku...${NC}"
-    if ! wal --backend haishoku --saturate 1.0 -i "$HOME/.config/hypr/wallpapers/default.jpg" -n; then
-        echo -e "${YELLOW}Haishoku backend failed, trying colorthief...${NC}"
-        if ! wal --backend colorthief -i "$HOME/.config/hypr/wallpapers/default.jpg" -n; then
-            echo -e "${RED}All color extraction backends failed. Using default colors...${NC}"
-            # Create a fallback colors file
-            mkdir -p "$HOME/.cache/wal"
-            cat > "$HOME/.cache/wal/colors" << EOL
+if command -v wal &> /dev/null; then
+    # Try each backend and use the first one that works
+    for backend in haishoku colorthief wal; do
+        echo -e "${BLUE}Trying $backend backend...${NC}"
+        if wal --backend $backend --saturate 0.7 -i "$HOME/.config/hypr/wallpapers/default.jpg" -n; then
+            echo -e "${GREEN}Successfully initialized pywal with $backend backend${NC}"
+            break
+        fi
+    done
+else
+    echo -e "${YELLOW}Warning: pywal not found, using default colors${NC}"
+fi
+
+# Ensure we have color files regardless of pywal success
+if [ ! -f "$HOME/.cache/wal/colors" ]; then
+    echo -e "${YELLOW}Creating fallback color scheme...${NC}"
+    mkdir --p "$HOME/.cache/wal"
+    cat > "$HOME/.cache/wal/colors" << EOL
 #1a1b26
 #24283b
 #7aa2f7
@@ -191,8 +227,6 @@ if ! wal --backend colorz --saturate 1.0 -i "$HOME/.config/hypr/wallpapers/defau
 #2ac3de
 #c0caf5
 EOL
-        fi
-    fi
 fi
 
 # Set up pywal templates and links
